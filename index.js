@@ -1,12 +1,17 @@
+// Require necessary Node.js built-in modules
 const fs = require('fs');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const hrtime = require('process').hrtime;
 const os = require('os');
 
+// Start the timer
 const startTime = hrtime.bigint();
+
+// Array to store errors
 const errors = [];
 
+// Object to track progress of the batch conversion process
 const progress = {
   processed: 0,
   current: 0,
@@ -15,6 +20,7 @@ const progress = {
   message: ''
 };
 
+// Function to log progress to console
 function log () {
   console.clear();
   let percent = (progress.processed / progress.total) * 100;
@@ -25,6 +31,7 @@ function log () {
   console.log(`Time: ${computeTime(startTime)}`);
 }
 
+// Function to convert PDF file to images using ImageMagick
 async function convertPDFToImage(pdfFile, i) {
   progress.current = i + 1;
   try {
@@ -39,6 +46,7 @@ async function convertPDFToImage(pdfFile, i) {
   }
 }
 
+// Function to convert images back to PDF using ImageMagick
 async function convertImageToPDF(pdfFile, i) {
   progress.current = i + 1;
   try {
@@ -56,6 +64,7 @@ async function convertImageToPDF(pdfFile, i) {
   }
 }
 
+// Function to clean up the temporary files generated during the conversion process
 async function cleanUpIntermediateFiles(pdfFile, i) {
   const jpgFiles = await util.promisify(fs.readdir)(process.cwd() + '/temp');
   const filteredJpgFiles = jpgFiles.filter(file => file.endsWith('.jpg') && file.startsWith(pdfFile.replace('.pdf', '')));
@@ -66,6 +75,7 @@ async function cleanUpIntermediateFiles(pdfFile, i) {
   log();
 }
 
+// Function to optimize PDF file using Ghostscript
 async function optimizePDF(pdfFile, i) {
   const finalPDFFile = pdfFile.replace('.pdf', '_final.pdf');
   const imagePDFFile = pdfFile.replace('.pdf', '_image.pdf');
@@ -83,6 +93,7 @@ async function optimizePDF(pdfFile, i) {
   }
 }
 
+// Function to convert a PDF file to images and back to PDF
 async function convertPDFToImagesAndBack(pdfFile, i) {
   try {
     await convertPDFToImage(pdfFile, i);
@@ -96,6 +107,7 @@ async function convertPDFToImagesAndBack(pdfFile, i) {
   }
 }
 
+// Helper function to pause execution for a given amount of time
 async function wait (howLong) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -104,11 +116,10 @@ async function wait (howLong) {
   });
 }
 
+// Function to compute elapsed time
 function computeTime (startTime) {
   const endTime = hrtime.bigint();
-  // substract the two bigints and convert to seconds
   const timeTaken = Number((endTime - startTime) / 1000000000n);
-  // time taken in a human readable format
   const seconds = timeTaken % 60;
   const minutes = Math.floor(timeTaken / 60) % 60;
   const hours = Math.floor(timeTaken / 3600);
@@ -116,12 +127,12 @@ function computeTime (startTime) {
   return `${hours}h ${minutes}m ${seconds}s`;
 }
 
+// Main function to control the flow of the program
 async function main () {
   const pdfFiles = await util.promisify(fs.readdir)(process.cwd() + '/original');
   const filteredPdfFiles = pdfFiles.filter(file => file.endsWith('.pdf'));
   const total = filteredPdfFiles.length;
 
-  // detect number of cores
   const maxThreads = os.cpus().length;
   progress.threads = maxThreads;
 
@@ -131,6 +142,7 @@ async function main () {
   let start = 0;
   let end = start + maxThreads;
 
+  // Main loop to process all PDF files
   while (end < total + maxThreads) {
     const promises = [];
     for (let i = start; i < end; i++) {
@@ -138,15 +150,14 @@ async function main () {
       const pdfFile = filteredPdfFiles[i];
       if (!pdfFile) continue;
       promises.push(convertPDFToImagesAndBack(pdfFile, i, total));
-      // await wait(10000);
     }
     await Promise.all(promises);
     start = end;
     end += maxThreads;
   }
 
+  // If there were any errors, write them to a .json file
   if (errors.length) {
-    // print errors to a local .json file
     await util.promisify(fs.writeFile)('errors.json', JSON.stringify(errors, null, 2));
   }
 
@@ -154,4 +165,5 @@ async function main () {
   console.log(`Completed in: ${timeTaken}`);
 }
 
+// Call the main function to start the process
 main();
