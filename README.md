@@ -45,7 +45,7 @@ This tool is a Node.js application designed to batch convert PDF files into imag
 
 ## Code Overview
 
-This application uses built-in Node.js packages `fs`, `util`, `child_process`, `process`, and `os` to manipulate files, execute shell commands, and optimize resource usage based on system configuration.
+This application uses Node.js packages `fs-extra`, `util`, `child_process`, `process`, and `os` to manipulate files, execute shell commands, and optimize resource usage based on system configuration.
 
 Here's a brief overview of the steps involved in the conversion process:
 
