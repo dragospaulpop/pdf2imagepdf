@@ -1,5 +1,5 @@
 // Require necessary Node.js built-in modules
-const fs = require('fs');
+const fs = require('fs-extra');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 const hrtime = require('process').hrtime;
@@ -129,6 +129,8 @@ function computeTime (startTime) {
 
 // Main function to control the flow of the program
 async function main () {
+  fs.ensureDirSync('./temp');
+  fs.ensureDirSync('./output');
   const pdfFiles = await util.promisify(fs.readdir)(process.cwd() + '/original');
   const filteredPdfFiles = pdfFiles.filter(file => file.endsWith('.pdf'));
   const total = filteredPdfFiles.length;

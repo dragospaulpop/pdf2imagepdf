@@ -27,8 +27,17 @@ This tool is a Node.js application designed to batch convert PDF files into imag
             ```
             brew install ghostscript
             ```
-
-3. **Execution**:
+3. **ImageMagick permissions**
+    - In order to use ImageMagick to convert PDF files into images we need to update the security policy
+        - On Ubuntu, find the policy.xml file for ImageMagick and open it in a text editor:
+            ```
+            sudo nano /etc/ImageMagick-6/policy.xml
+            ```
+        - Find the policy element that has the pattern attribute set to PDF and change the rights from none to read|write:
+            ```
+            <policy domain="coder" rights="read|write" pattern="PDF" />
+            ```
+4. **Execution**:
     - With the setup complete, run the application using the command:
         ```
         node index.js
